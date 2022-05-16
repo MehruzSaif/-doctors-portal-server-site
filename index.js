@@ -18,6 +18,7 @@ async function run() {
     await client.connect();
     const serviceCollection = client.db('doctors_portal').collection('services');
     const bookingCollection = client.db('doctors_portal').collection('bookings');
+    const userCollection = client.db('doctors_portal').collection('users');
 
     // to load service data on appointment
     app.get('/service', async (req, res) => {
@@ -27,6 +28,21 @@ async function run() {
       res.send(services);
     });
 
+    app.put('/user/:email', async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const filter = { email: email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: user,
+      };
+      const result = await userCollection.updateOne(filter, updateDoc, options);
+      res.send(result);
+    })
+
+
+    // Warning: This is not the proper way to query multiple collection
+    // After learning more about mongoDB, use aggregate, lookup, pipelin, match, group
     app.get('/available', async (req, res) => {
       const date = req.query.date;
 
@@ -38,7 +54,7 @@ async function run() {
       const bookings = await bookingCollection.find(query).toArray();
 
       // step 3: for each service, find bookings for that service
-      services.forEach(service=>{
+      services.forEach(service => {
         // step 4: find bookings for that service. output: [{}, {}, {}, {}]
         const serviceBookings = bookings.filter(book => book.treatment === service.name);
         // step 5: select slots for the service Bookings: ['', '', '', '']
@@ -62,9 +78,9 @@ async function run() {
      * app.delete('/booking/:id') // delete a specific booking
      */
 
-     app.get('/booking', async(req, res) =>{
+    app.get('/booking', async (req, res) => {
       const patient = req.query.patient;
-      const query = {patient: patient};
+      const query = { patient: patient };
       const bookings = await bookingCollection.find(query).toArray();
       res.send(bookings);
     })
