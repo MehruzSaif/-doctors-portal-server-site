@@ -14,6 +14,13 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({message: 'UNAUTHORIZED access'});
+  }
+}
+
 async function run() {
   try {
     await client.connect();
@@ -80,8 +87,10 @@ async function run() {
      * app.delete('/booking/:id') // delete a specific booking
      */
 
-    app.get('/booking', async (req, res) => {
+    app.get('/booking', verifyJWT, async (req, res) => {
       const patient = req.query.patient;
+      const authorization = req.headers.authorization;
+      console.log('auth header', authorization);
       const query = { patient: patient };
       const bookings = await bookingCollection.find(query).toArray();
       res.send(bookings);
