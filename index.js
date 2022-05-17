@@ -49,11 +49,17 @@ async function run() {
       res.send(users);
     });
 
+    app.get('/admin/:email', async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email });
+      const isAdmin = user.role === 'admin';
+      res.send({ admin: isAdmin })
+    })
+
     app.put('/user/admin/:email', verifyJWT, async (req, res) => {
       const email = req.params.email;
       const requester = req.decoded.email;
       const requesterAccount = await userCollection.findOne({ email: requester });
-      
       if (requesterAccount.role === 'admin') {
         const filter = { email: email };
         const updateDoc = {
@@ -63,9 +69,10 @@ async function run() {
         res.send(result);
       }
       else {
-        res.status(403).send({message: 'forbidden'});
+        res.status(403).send({ message: 'forbidden' });
       }
-    });
+
+    })
 
 
     app.put('/user/:email', async (req, res) => {
